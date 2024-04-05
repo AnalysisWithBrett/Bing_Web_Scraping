@@ -31,7 +31,7 @@ title_cleaned <- gsub("^\\d+\\.\\s*", "", name)
 
 # Choosing movie titles only
 title_cleaned <- title_cleaned[2:51]
-  
+
 
 # Extract the year of release, duration and content
 info_movie <- page %>% 
@@ -65,22 +65,65 @@ rating <- page %>%
 movie_rating <- as.numeric(substr(rating, 1, 3))
 
 
-
-
 # Extracting the movie details
 synopsis <- page %>% 
   html_elements('.ipc-html-content-inner-div') %>% 
   html_text2()
 
 
+# Getting the links of movies
+sublink <- page %>% 
+  html_elements(".ipc-title-link-wrapper") %>% 
+  html_attr("href")
+
+
+# Storing the main link of IMdb
+main_link <- "https://www.imdb.com/"
+
+
+# Getting the complete links of each movies
+movie_link <- paste0(main_link, sublink)
+
+
+# Getting the cast members of the movies
+get_cast <- function(movie_link){
+  
+  movie_page <- movie_link
+  movie_cast <- read_html(movie_page) %>% 
+    html_elements(".sc-bfec09a1-1.gCQkeh") %>% 
+    html_text2() %>% paste(collapse = ",") # this puts all the casts into one string
+  
+  return(movie_cast)
+}
+
+# Putting the movie links into the function to get the cast members
+cast <- sapply(movie_link[1:50], FUN = get_cast, USE.NAMES = FALSE) # last line removes the links as reference
+
+
+# Getting the characters of the movies
+get_characters <- function(movie_link){
+  
+  movie_page <- movie_link
+  movie_characters <- read_html(movie_page) %>% 
+    html_elements(".sc-bfec09a1-4.kvTUwN") %>% 
+    html_text2() %>% paste(collapse = ",")
+  
+  return(movie_characters)
+}
+
+# Putting the movie links into the function to get the cast members
+characters <- sapply(movie_link[1:50], FUN = get_characters, USE.NAMES = FALSE)
 
 
 # Storing the variables in the dataframe
 movie <- data.frame(Title = title_cleaned, Year = years, Duration = duration,
-                    Content = content, Synopsis = synopsis)
+                    Cast = cast, Characters = characters, Content = content, 
+                    Synopsis = synopsis)
 
 View(movie)
 
 
 # Exported in excel file to your working directory
 write_xlsx(movie, "movies.xlsx")
+
+
